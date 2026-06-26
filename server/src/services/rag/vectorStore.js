@@ -1,35 +1,38 @@
 import { Chroma } from "@langchain/community/vectorstores/chroma";
-import embeddings from "./embeddingService.js";
 import { Document } from "@langchain/core/documents";
+import embeddings from "./embeddingService.js";
 
-const createVectorStore = async (chunks) => {
+const COLLECTION_NAME = "research-papers";
+const CHROMA_URL = "http://localhost:8000";
 
-    const cleanedChunks = chunks.map(chunk => {
+export const createVectorStore = async (chunks) => {
 
-        return new Document({
-
+    const cleanedChunks = chunks.map(chunk =>
+        new Document({
             pageContent: chunk.pageContent,
-
             metadata: {
                 source: chunk.metadata.source,
                 page: chunk.metadata.loc.pageNumber,
                 totalPages: chunk.metadata.pdf.totalPages
-
             }
-
-        });
-
-    });
-
-    return await Chroma.fromDocuments(
-        cleanedChunks,
-        embeddings,
-        {
-            collectionName: "research-papers",
-            url: "http://localhost:8000"
-        }
+        })
     );
 
+    const vectorStore = new Chroma(embeddings, {
+        collectionName: COLLECTION_NAME,
+        url: CHROMA_URL
+    });
+
+    await vectorStore.addDocuments(cleanedChunks);
+
+    return vectorStore;
 };
 
-export default createVectorStore;
+export const getVectorStore = () => {
+
+    return new Chroma(embeddings, {
+        collectionName: COLLECTION_NAME,
+        url: CHROMA_URL
+    });
+
+};
